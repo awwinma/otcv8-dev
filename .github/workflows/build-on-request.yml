@@ -13,42 +13,40 @@ jobs:
       with:
           submodules: recursive
 
-    - name: Setup MSBuild and add to PATH
+    - name: Setup MSBuild
       uses: microsoft/setup-msbuild@v2
 
-    - name: Run vcpkg
-      uses: lukka/run-vcpkg@v11
-      with:
-        vcpkgDirectory: ${{ runner.workspace }}/vcpkg/
-        # Actualizamos a un commit más estable para evitar el error de bzip2
-        vcpkgGitCommitId: 501db0f17ef4ef1d23592c44899f25c99d5bcac6
-        setupOnly: true
+    - name: Get vcpkg
+      run: |
+        git clone https://github.com/microsoft/vcpkg.git
+        cd vcpkg
+        git checkout 501db0f17ef4ef1d23592c44899f25c99d5bcac6
+        ./bootstrap-vcpkg.bat
 
-    - name: Install vcpkg packages
+    - name: Install dependencies
       env:
         VCPKG_BINARY_SOURCES: 'clear'
       run: |
-        ${{ runner.workspace }}/vcpkg/vcpkg install boost-iostreams:x86-windows-static boost-asio:x86-windows-static boost-beast:x86-windows-static boost-system:x86-windows-static boost-variant:x86-windows-static boost-lockfree:x86-windows-static boost-process:x86-windows-static boost-program-options:x86-windows-static boost-uuid:x86-windows-static boost-filesystem:x86-windows-static luajit:x86-windows-static glew:x86-windows-static physfs:x86-windows-static openal-soft:x86-windows-static libogg:x86-windows-static libvorbis:x86-windows-static zlib:x86-windows-static libzip:x86-windows-static bzip2:x86-windows-static openssl:x86-windows-static
+        ./vcpkg/vcpkg install boost-iostreams:x86-windows-static boost-asio:x86-windows-static boost-beast:x86-windows-static boost-system:x86-windows-static boost-variant:x86-windows-static boost-lockfree:x86-windows-static boost-process:x86-windows-static boost-program-options:x86-windows-static boost-uuid:x86-windows-static boost-filesystem:x86-windows-static luajit:x86-windows-static glew:x86-windows-static physfs:x86-windows-static openal-soft:x86-windows-static libogg:x86-windows-static libvorbis:x86-windows-static zlib:x86-windows-static libzip:x86-windows-static bzip2:x86-windows-static openssl:x86-windows-static
 
     - name: Integrate vcpkg
-      run: |
-        ${{ runner.workspace }}/vcpkg/vcpkg integrate install
+      run: ./vcpkg/vcpkg integrate install
         
-    - name: Compile otclient_dx
+    - name: Compile DirectX
       run: |
         cd vc16
         MSBuild /property:Configuration=DirectX /p:BUILD_REVISION=${{github.run_number}}
         
-    - name: Compile otclient_gl
+    - name: Compile OpenGL
       run: |
         cd vc16
         MSBuild /property:Configuration=OpenGL /p:BUILD_REVISION=${{github.run_number}}
 
     - name: Upload binaries
-      uses: 'actions/upload-artifact@v4'
+      uses: actions/upload-artifact@v4
       with:
-        name: Windows-OTCv8-binaries
+        name: OTCv8-Windows-Client
         path: |
-          vc16/DirectX/otclient_dx.exe
-          vc16/OpenGL/otclient_gl.exe
+          vc16/DirectX/*.exe
+          vc16/OpenGL/*.exe
         if-no-files-found: warn
