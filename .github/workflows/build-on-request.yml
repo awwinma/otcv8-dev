@@ -22,8 +22,12 @@ jobs:
       with:
         vcpkgDirectory: ${{ runner.workspace }}/vcpkg/
         vcpkgGitCommitId: 3b3bd424827a1f7f4813216f6b32b6c61e386b2e
+        setupOnly: true # Esto evita que intente compilar automáticamente con configuraciones viejas
 
     - name: Install vcpkg packages
+      # Esta línea de abajo es la clave: "clear" borra el intento de usar la caché que falló
+      env:
+        VCPKG_BINARY_SOURCES: 'clear' 
       run: |
         ${{ runner.workspace }}/vcpkg/vcpkg install boost-iostreams:x86-windows-static boost-asio:x86-windows-static boost-beast:x86-windows-static boost-system:x86-windows-static boost-variant:x86-windows-static boost-lockfree:x86-windows-static boost-process:x86-windows-static boost-program-options:x86-windows-static boost-uuid:x86-windows-static boost-filesystem:x86-windows-static luajit:x86-windows-static glew:x86-windows-static physfs:x86-windows-static openal-soft:x86-windows-static libogg:x86-windows-static libvorbis:x86-windows-static zlib:x86-windows-static libzip:x86-windows-static bzip2:x86-windows-static openssl:x86-windows-static
 
@@ -32,13 +36,13 @@ jobs:
         ${{ runner.workspace }}/vcpkg/vcpkg integrate install
         
     - name: Compile otclient_dx
-      timeout-minutes: 20
+      timeout-minutes: 40
       run: |
         cd vc16
         MSBuild /property:Configuration=DirectX /p:BUILD_REVISION=${{github.run_number}}
         
     - name: Compile otclient_gl
-      timeout-minutes: 20
+      timeout-minutes: 40
       run: |
         cd vc16
         MSBuild /property:Configuration=OpenGL /p:BUILD_REVISION=${{github.run_number}}
@@ -48,6 +52,6 @@ jobs:
       with:
         name: Windows-OTCv8-binaries
         path: |
-          otclient_gl.exe
-          otclient_dx.exe
+          vc16/otclient_gl.exe
+          vc16/otclient_dx.exe
         if-no-files-found: error
