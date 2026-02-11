@@ -27,20 +27,30 @@ jobs:
       env:
         VCPKG_BINARY_SOURCES: 'clear'
       run: |
-        ./vcpkg/vcpkg install boost-iostreams:x86-windows-static boost-asio:x86-windows-static boost-beast:x86-windows-static boost-system:x86-windows-static boost-variant:x86-windows-static boost-lockfree:x86-windows-static boost-process:x86-windows-static boost-program-options:x86-windows-static boost-uuid:x86-windows-static boost-filesystem:x86-windows-static luajit:x86-windows-static glew:x86-windows-static physfs:x86-windows-static libogg:x86-windows-static zlib:x86-windows-static libzip:x86-windows-static bzip2:x86-windows-static openssl:x86-windows-static
+        ./vcpkg/vcpkg install boost:x86-windows-static luajit:x86-windows-static glew:x86-windows-static physfs:x86-windows-static libogg:x86-windows-static zlib:x86-windows-static libzip:x86-windows-static bzip2:x86-windows-static openssl:x86-windows-static
 
     - name: Integrate vcpkg
       run: ./vcpkg/vcpkg integrate install
         
     - name: Compile DirectX
       run: |
+        $vcpkg_path = "${{ github.workspace }}\vcpkg\installed\x86-windows-static"
         cd vc16
-        MSBuild /property:Configuration=DirectX /p:BUILD_REVISION=${{github.run_number}}
+        MSBuild /property:Configuration=DirectX `
+                /p:BUILD_REVISION=${{github.run_number}} `
+                /p:IncludePath="$vcpkg_path\include" `
+                /p:LibraryPath="$vcpkg_path\lib" `
+                /p:VcpkgEnableManifest=false
         
     - name: Compile OpenGL
       run: |
+        $vcpkg_path = "${{ github.workspace }}\vcpkg\installed\x86-windows-static"
         cd vc16
-        MSBuild /property:Configuration=OpenGL /p:BUILD_REVISION=${{github.run_number}}
+        MSBuild /property:Configuration=OpenGL `
+                /p:BUILD_REVISION=${{github.run_number}} `
+                /p:IncludePath="$vcpkg_path\include" `
+                /p:LibraryPath="$vcpkg_path\lib" `
+                /p:VcpkgEnableManifest=false
 
     - name: Upload binaries
       uses: actions/upload-artifact@v4
